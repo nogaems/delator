@@ -22,7 +22,7 @@ class Bot:
     def __init__(self, loglevel=None):
         config = ClientConfig(encryption_enabled=True,
                               pickle_key=cfg.pickle_key, store_name=cfg.store_name)
-        self.async_client = AsyncClient(
+        self.client = AsyncClient(
             cfg.server,
             cfg.user,
             cfg.device_id,
@@ -86,7 +86,7 @@ class Bot:
                                       'object with name \'handler\'.')
 
                 command = Command(
-                    *self._process_module(module), self.async_client)
+                    *self._process_module(module), self)
 
                 if not self.commands.get(command.name):
                     self.commands[command.name] = command
@@ -108,7 +108,7 @@ class Bot:
 
         if self.commands:
             self.logger.info(
-                f'Registered commands: {set(self.commands.values())}')
+                f'Registered commands: {list(set(self.commands.values()))}')
         else:
             self.logger.warn('No commands added!')
 
@@ -120,20 +120,20 @@ class Bot:
             return (None, None)
 
     async def _serve_forever(self):
-        response = await self.async_client.login(cfg.password)
+        response = await self.client.login(cfg.password)
         self.logger.info(response)
 
         next_batch_token_path = f'{cfg.store_path}next_batch_token' if \
             cfg.store_path.endswith('/') else f'{cfg.store_path}/next_batch_token'
         if os.path.isfile(next_batch_token_path):
             async with aiofiles.open(next_batch_token_path, 'r') as next_batch_token:
-                self.async_client.next_batch = await next_batch_token.read()
+                self.client.next_batch = await next_batch_token.read()
                 await next_batch_token.close()
                 self.logger.info(
-                    f'Next batch token: {self.async_client.next_batch}')
+                    f'Next batch token: {self.client.next_batch}')
 
         while True:
-            sync_response = await self.async_client.sync(self.sync_delay)
+            sync_response = await self.client.sync(self.sync_delay)
 
             async with aiofiles.open(next_batch_token_path, 'w') as next_batch_token:
                 await next_batch_token.write(sync_response.next_batch)
