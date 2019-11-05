@@ -1,0 +1,8 @@
+server = 'https://your.homeserver'
+user = '@account:your.homeserver'
+device_id = 'bot'
+password = 'password-for-account'
+pickle_key = 'password-for-pickle-storage'
+store_name = 'bot'
+store_path = 'profile/'
+manager_accounts = ('') # name here accounts responsible for device keys verifiacation
