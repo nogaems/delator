@@ -1,7 +1,7 @@
-from nio import (ClientConfig, AsyncClient, SyncResponse)
+from nio import (ClientConfig, AsyncClient, SyncResponse, KeysQueryResponse)
+from nio.events.invite_events import InviteMemberEvent
 
 import asyncio
-import aiofiles
 
 import logbook
 import sys
@@ -18,10 +18,14 @@ from command import Command
 class Bot:
     commands = {}
     sync_delay = 1000
+    allowed_users = {}
+    cfg = cfg
 
     def __init__(self, loglevel=None):
         config = ClientConfig(encryption_enabled=True,
-                              pickle_key=cfg.pickle_key, store_name=cfg.store_name)
+                              pickle_key=cfg.pickle_key,
+                              store_name=cfg.store_name,
+                              store_sync_tokens=True)
         self.client = AsyncClient(
             cfg.server,
             cfg.user,
@@ -38,6 +42,10 @@ class Bot:
         logger_group.add_logger(self.logger)
 
         self._register_commands()
+        self.client.add_response_callback(self._sync_cb, SyncResponse)
+        self.client.add_response_callback(
+            self._key_query_cb, KeysQueryResponse)
+        self.client.add_event_callback(self._invite_cb, InviteMemberEvent)
 
     def _preserve_name(self, path):
         return path.split('/')[-1].split('.py')[0].strip().replace(' ', '_').replace('-', '')
@@ -123,30 +131,35 @@ class Bot:
         response = await self.client.login(cfg.password)
         self.logger.info(response)
 
-        next_batch_token_path = f'{cfg.store_path}next_batch_token' if \
-            cfg.store_path.endswith('/') else f'{cfg.store_path}/next_batch_token'
-        if os.path.isfile(next_batch_token_path):
-            async with aiofiles.open(next_batch_token_path, 'r') as next_batch_token:
-                self.client.next_batch = await next_batch_token.read()
-                await next_batch_token.close()
-                self.logger.info(
-                    f'Next batch token: {self.client.next_batch}')
+        await self.client.sync_forever(1000, full_state=True)
 
-        while True:
-            sync_response = await self.client.sync(self.sync_delay)
+    async def _key_query_cb(self, response):
+        for device in self.client.device_store:
+            if device.trust_state.value == 0:
+                if device.user_id in cfg.manager_accounts:
+                    self.client.verify_device(device)
+                    self.logger.info(
+                        f'Verified manager\'s device {device.device_id} for user {device.user_id}')
+                else:
+                    self.client.blacklist_device(device)
 
-            async with aiofiles.open(next_batch_token_path, 'w') as next_batch_token:
-                await next_batch_token.write(sync_response.next_batch)
+    async def _invite_cb(self, room, event):
+        if room.room_id not in self.client.rooms and \
+           event.sender in cfg.manager_accounts:
+            await self.client.join(room.room_id)
+            self.logger.info(
+                f'Accepted invite to room {room.room_id} from {event.sender}')
 
-            if len(sync_response.rooms.join) > 0:
-                joins = sync_response.rooms.join
-                for room_id in joins:
-                    for event in joins[room_id].timeline.events:
-                        if hasattr(event, 'body'):
-                            command, args = self._parse_command(event.body)
-                            if command and command in self.commands:
-                                await self.commands[command].run(
-                                    args, event, room_id)
+    async def _sync_cb(self, response):
+        if len(response.rooms.join) > 0:
+            joins = response.rooms.join
+            for room_id in joins:
+                for event in joins[room_id].timeline.events:
+                    if hasattr(event, 'body'):
+                        command, args = self._parse_command(event.body)
+                        if command and command in self.commands:
+                            await self.commands[command].run(
+                                args, event, room_id)
 
     def serve(self):
         loop = asyncio.get_event_loop()
