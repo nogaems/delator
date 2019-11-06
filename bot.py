@@ -155,7 +155,11 @@ class Bot:
             joins = response.rooms.join
             for room_id in joins:
                 for event in joins[room_id].timeline.events:
-                    if hasattr(event, 'body'):
+                    devices = [
+                        d for d in self.client.device_store.active_user_devices(event.sender)]
+
+                    def is_verified(d): return d.trust_state.value == 1
+                    if all(map(is_verified, devices)) and hasattr(event, 'body'):
                         command, args = self._parse_command(event.body)
                         if command and command in self.commands:
                             await self.commands[command].run(
