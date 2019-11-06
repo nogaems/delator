@@ -150,16 +150,17 @@ class Bot:
             self.logger.info(
                 f'Accepted invite to room {room.room_id} from {event.sender}')
 
+    def _is_sender_verified(self, sender):
+        devices = [
+            d for d in self.client.device_store.active_user_devices(sender)]
+        return all(map(lambda d: d.trust_state.value == 1, devices))
+
     async def _sync_cb(self, response):
         if len(response.rooms.join) > 0:
             joins = response.rooms.join
             for room_id in joins:
                 for event in joins[room_id].timeline.events:
-                    devices = [
-                        d for d in self.client.device_store.active_user_devices(event.sender)]
-
-                    def is_verified(d): return d.trust_state.value == 1
-                    if all(map(is_verified, devices)) and hasattr(event, 'body'):
+                    if self._is_sender_verified(event.sender) and hasattr(event, 'body'):
                         command, args = self._parse_command(event.body)
                         if command and command in self.commands:
                             await self.commands[command].run(
