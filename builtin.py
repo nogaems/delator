@@ -1,0 +1,86 @@
+import aiohttp
+import asyncio
+import magic
+
+import re
+import gzip
+
+
+class MessageLinksInfo:
+    chunk_size = 100000
+    useragent = 'Mozilla/5.0 (X11; Linux x86_64; rv:60.9) '
+    'Gecko/20100101 Goanna/4.4 Firefox/60.9 PaleMoon/28.7.2'
+    codecs = ['utf8', 'koi8-r', 'cp1251']
+
+    def __init__(self):
+        self.session = aiohttp.ClientSession(
+            headers={'User-Agent': self.useragent})
+        self.magic = magic.Magic(mime=True, uncompress=True)
+
+    def _parse_urls(self, message):
+        regex = r'http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_~@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        match = re.findall(regex, message)
+        return match
+
+    def _decompress(self, data):
+        try:
+            return gzip.decompress(data)
+
+        except OSError:
+            return None
+
+    def _parse_title(self, html):
+        decoded = ''
+        for codec in self.codecs:
+            try:
+                decoded = html.decode(codec)
+                break
+            except Exception as e:
+                decoded = e
+
+        if not isinstance(decoded, str):
+            return decoded
+        regex = r'<title[\s\S^<]*>([\s\S]*)<\/title>'
+        match = re.findall(regex, decoded, re.IGNORECASE)
+        return match[0] if match else match
+
+    async def _fetch(self, session, urls):
+        chunks = []
+        for url in urls:
+            try:
+                async with session.get(url) as response:
+                    chunk = await response.content.readany()
+                    while hasattr(response.connection, 'closed') and\
+                            not response.connection.closed and \
+                            len(chunk) < self.chunk_size:
+                        chunk += await response.content.readany()
+                    chunks.append(chunk)
+            except Exception as e:
+                chunks.append(e)
+        return chunks
+
+    async def _get_info(self, message):
+        urls = self._parse_urls(message)
+        chunks = None
+        if urls:
+            chunks = await self._fetch(self.session, urls)
+        if chunks:
+            info = []
+            for chunk in chunks:
+                if not isinstance(chunk, bytes):
+                    info.append(f'Bad link: {repr(chunk)}')
+                else:
+                    dcomp = self._decompress(chunk)
+                    chunk = dcomp if dcomp else chunk
+
+                    title = self._parse_title(chunk)
+                    if isinstance(title, str):
+                        info.append(f'Title: {title}')
+                    else:
+                        file_type = self.magic.from_buffer(chunk)
+                        info.append(f'File type: {file_type}')
+            return info
+
+    def get_info(self, message):
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self._get_info(message))

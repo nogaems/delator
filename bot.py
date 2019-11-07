@@ -13,6 +13,7 @@ import os
 from log import logger_group
 import config as cfg
 from command import Command
+from builtin import MessageLinksInfo
 
 
 class Bot:
@@ -40,6 +41,8 @@ class Bot:
 
         self.logger = logbook.Logger('bot')
         logger_group.add_logger(self.logger)
+
+        self.mli = MessageLinksInfo()
 
         self._register_commands()
         self.client.add_response_callback(self._sync_cb, SyncResponse)
@@ -155,6 +158,18 @@ class Bot:
             d for d in self.client.device_store.active_user_devices(sender)]
         return all(map(lambda d: d.trust_state.value == 1, devices))
 
+    async def _process_links(self, message, room_id):
+        info = await self.mli._get_info(message)
+        if info:
+            nl = '\n'
+            content = {
+                'body': f'{nl.join(info)}',
+                'formatted_body': f'{nl.join(map(lambda i: i.join(["<strong>", "</strong>"]),info))}',
+                'format': 'org.matrix.custom.html',
+                'msgtype': 'm.text'
+            }
+            await self.client.room_send(room_id, 'm.room.message', content)
+
     async def _sync_cb(self, response):
         if len(response.rooms.join) > 0:
             joins = response.rooms.join
@@ -165,6 +180,8 @@ class Bot:
                         if command and command in self.commands:
                             await self.commands[command].run(
                                 args, event, room_id)
+                        if event.sender != self.cfg.user:
+                            await self._process_links(event.body, room_id)
 
     def serve(self):
         loop = asyncio.get_event_loop()
