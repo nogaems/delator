@@ -1,4 +1,3 @@
-import aiohttp
 import asyncio
 import magic
 
@@ -8,13 +7,10 @@ import gzip
 
 class MessageLinksInfo:
     chunk_size = 100000
-    useragent = 'Mozilla/5.0 (X11; Linux x86_64; rv:60.9) '
-    'Gecko/20100101 Goanna/4.4 Firefox/60.9 PaleMoon/28.7.2'
     codecs = ['utf8', 'koi8-r', 'cp1251']
 
-    def __init__(self):
-        self.session = aiohttp.ClientSession(
-            headers={'User-Agent': self.useragent})
+    def __init__(self, session):
+        self.session = session
         self.magic = magic.Magic(mime=True, uncompress=True)
 
     def _parse_urls(self, message):

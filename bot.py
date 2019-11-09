@@ -2,6 +2,7 @@ from nio import (ClientConfig, AsyncClient, SyncResponse, KeysQueryResponse)
 from nio.events.invite_events import InviteMemberEvent
 
 import asyncio
+import aiohttp
 
 import logbook
 import sys
@@ -18,15 +19,25 @@ from builtin import MessageLinksInfo
 
 class Bot:
     commands = {}
-    sync_delay = 1000
     allowed_users = {}
     cfg = cfg
+
+    sync_delay = 1000
+    user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:60.9) '
+    'Gecko/20100101 Goanna/4.4 Firefox/60.9 PaleMoon/28.7.2'
 
     def __init__(self, loglevel=None):
         config = ClientConfig(encryption_enabled=True,
                               pickle_key=cfg.pickle_key,
                               store_name=cfg.store_name,
                               store_sync_tokens=True)
+
+        if not os.path.exists(cfg.store_path):
+            os.makedirs(cfg.store_path)
+
+        self.http_session = aiohttp.ClientSession(
+            headers={'User-Agent': self.user_agent})
+
         self.client = AsyncClient(
             cfg.server,
             cfg.user,
@@ -42,7 +53,7 @@ class Bot:
         self.logger = logbook.Logger('bot')
         logger_group.add_logger(self.logger)
 
-        self.mli = MessageLinksInfo()
+        self.mli = MessageLinksInfo(self.http_session)
 
         self._register_commands()
         self.client.add_response_callback(self._sync_cb, SyncResponse)
@@ -180,6 +191,8 @@ class Bot:
                         if command and command in self.commands:
                             await self.commands[command].run(
                                 args, event, room_id)
+                            self.logger.debug(
+                                f'serving command \'{command}\' with arguments {args} in room {room_id}')
                         if event.sender != self.cfg.user:
                             await self._process_links(event.body, room_id)
 
