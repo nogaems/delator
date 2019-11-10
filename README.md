@@ -76,7 +76,7 @@ chmod -R a+w ~/.delator
 
 docker build -t delator --no-cache .
 
-docker run delator
+docker run -v ~/.delator/:/home/user/delator/profile -it delator
 ```
 # Important!
 
