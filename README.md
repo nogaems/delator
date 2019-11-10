@@ -19,7 +19,7 @@ Some folks on matrix are quite paranoid about their encrypted rooms logs might b
 
 ## Features
 * Encrypted rooms:
-    * On join verifies manager accounts devices in joined rooms, blocks everyone else (`%olm` command to manage users in room allowed only to a manager)
+    * On join verifies manager accounts devices in joined rooms, blacklists everyone else (`%olm` command to manage users in room allowed only to a manager)
     * Preserves verified devices across restarts
 * Automatically follows invites from manager accounts.
 * Writes comprehensive logs (use `-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}`).
@@ -82,3 +82,11 @@ docker run -v ~/.delator/:/home/user/delator/profile -it delator
 
 * In order to preserve the last syncronization token and the list of devices that you've already verified, do **NOT** change your `store_path` configuration variable and do **NOT** delete the directory you've pointed out there. But if that happened, you have to change your `device_id` value and re-verify bot in your client. Otherwise, the bot won't be able to read messages in encrypted rooms.
 * At startup it may take a while (usually about half a minute or so) for the bot to start serving your commands. That happens due to the large amount of http request to the homeserver. Have some patience, there's nothing to do about it.
+* In order to prevent exposing services from your private networks, add these rules on the host you're running the bot at:
+```
+iptables -A FORWARD -i <interface> -s 10.0.0.0/8 -j DROP
+iptables -A FORWARD -i <interface> -s 100.64.0.0/10 -j DROP
+iptables -A FORWARD -i <interface> -s 172.16.0.0/12 -j DROP
+iptables -A FORWARD -i <interface> -s 192.168.0.0/16 -j DROP
+iptables -A FORWARD -i <interface> -s fc00::/7 -j DROP
+```
