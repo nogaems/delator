@@ -26,4 +26,4 @@ RUN pip install --user -r requirements.txt
 # copy configuration file you've preliminarily prepared
 ADD config.py ./
 
-CMD ["python main.py -l INFO"]
+CMD python main.py -l INFO
