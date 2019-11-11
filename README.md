@@ -9,11 +9,10 @@ Some folks on matrix are quite paranoid about their encrypted rooms logs might b
 ### Already implemented:
 * `%h` (help)
 * `%echo`
+* `%s` (search with DuckDuckGo)
 * `%olm`
 
 ### Coming soon™:
-* `%s` (search)
-* `%w` (wiki)
 * `%d` (dice)
 * `%r` (remind)
 
@@ -74,10 +73,36 @@ That's basically it.
 mkdir ~/.delator
 chmod -R a+w ~/.delator
 
-docker build -t delator --no-cache .
-
+docker build -t delator --build-arg NO_CACHE="`date`" .
 docker run -v ~/.delator/:/home/user/delator/profile -it delator
 ```
+
+# Add a command
+
+In order to add your custom command to the bot, you have to create a python file within `commands` directory, let's say `my_command.py`.
+
+```python
+# my_command.py
+
+# optional, if not set the name of this file will be used
+name = 'command'
+
+# optional
+aliases = ('cmd', 'cmmnd')
+
+# optional, will be shown on %help command
+help = 'help string'
+
+# mandatory
+# note that this is a coroutine
+# args will be a list of strings, the arguments passed to your command
+# request is an instance of Request class defined here https://github.com/nogaems/delator/blob/master/command.py
+async def handler(args, request):
+    #do your things here
+    await request.reply('response text')
+```
+There's nothing else you have to do, this is already a working command.
+
 # Important!
 
 * In order to preserve the last syncronization token and the list of devices that you've already verified, do **NOT** change your `store_path` configuration variable and do **NOT** delete the directory you've pointed out there. But if that happened, you have to change your `device_id` value and re-verify bot in your client. Otherwise, the bot won't be able to read messages in encrypted rooms.
