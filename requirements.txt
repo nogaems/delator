@@ -1,3 +1,4 @@
 matrix-nio[e2e]
 aiohttp[speedups]<=3.6.2
 python-magic
+lxml
