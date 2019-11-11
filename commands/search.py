@@ -44,6 +44,7 @@ async def handler(args, request):
             request.logger.critical('something went wrong during fetching '
                                     f'request from the search engine: {e}')
             await request.reply(f'{e}')
+
         document = html.fromstring(text)
 
         if not hasattr(request.storage, 'search_results'):
@@ -54,6 +55,7 @@ async def handler(args, request):
         sr[request.room_id][request.event.sender] = {
             'results': [], 'pointer': 0
         }
+
         for link, title, snippet in zip(*parse_html(document)):
             sr[request.room_id][request.event.sender]['results'].append({
                 'link': link,
@@ -62,12 +64,15 @@ async def handler(args, request):
             })
     try:
         srd = request.storage.search_results[request.room_id][request.event.sender]
-        srd['pointer'] += 1
-        result = srd['results'][srd['pointer']]
+        if srd['results']:
+            result = srd['results'][srd['pointer']]
+            srd['pointer'] += 1
+        else:
+            result = None
         response = compose_response(result)
     except (AttributeError, KeyError):
         response = 'you must specify your search query first'
     except IndexError:
-        response = 'end of results list, try to refine your query'
+        response = 'the end of results list, try to refine your query'
         del request.storage.search_results[request.room_id][request.event.sender]
     await request.reply(response, formatted=True)
