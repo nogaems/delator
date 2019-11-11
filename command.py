@@ -14,12 +14,17 @@ class Request:
         self.storage = storage
         self.logger = logger
 
-    async def reply(self, text):
+    async def reply(self, text, formatted=None):
         sender = self.event.sender.split('@')[1].split(':')[0]
         content = {
             'body': f'{sender}: {text}',
             'msgtype': 'm.text'
         }
+        if formatted:
+            content.update({
+                'formatted_body': content['body'],
+                'format': 'org.matrix.custom.html',
+            })
         await self.bot.client.room_send(self.room_id, 'm.room.message', content)
 
 
