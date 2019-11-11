@@ -19,6 +19,8 @@ WORKDIR $HOME
 # clonning the bot repo and installing all the requirements
 ENV BOT_DIR="${HOME}/delator"
 ENV BOT_REPO="https://github.com/nogaems/delator.git"
+# here's a workaround to disable cache
+ARG NO_CACHE=`date`
 RUN git clone $BOT_REPO $BOT_DIR
 WORKDIR $BOT_DIR
 RUN pip install --user -r requirements.txt
