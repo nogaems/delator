@@ -23,11 +23,11 @@ async def handler(args, request):
     if not args:
         await request.reply(help)
     raw_choices = ' '.join(args)
-    if len(raw_choices) == 1:
+    choices = list(
+        set([c for c in map(lambda c: c.strip(), raw_choices.split('|')) if c]))
+    if len(choices) == 1:
         await request.reply('you always have other options, think better')
     else:
-        choices = list(
-            set([c for c in map(lambda c: c.strip(), raw_choices.split('|')) if c]))
         weights = list(
             map(lambda c: int(sha1(c.encode('utf8')).hexdigest(), base=16), choices))
         total_weight = sum(weights)
