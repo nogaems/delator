@@ -1,4 +1,5 @@
 from hashlib import sha1
+from datetime import datetime
 
 name = 'todo'
 aliases = ('делать')
@@ -13,7 +14,7 @@ def compose_response(choices, distr):
     choice_dist = '\n'.join(['{} {} {:.2f}%'.format(c,
                                                     '─' *
                                                     (max_choice_len - len(c) +
-                                                     (0 if d // 10 else 1) + 1),
+                                                     (0 if (d + 1) // 10 else 1) + 1),
                                                     d)
                              for c, d in zip(s_choices, s_distr)])
     return f'you should do:\n{choice_dist}'
@@ -21,7 +22,7 @@ def compose_response(choices, distr):
 
 async def handler(args, request):
     if not args:
-        await request.reply(help)
+        return await request.reply(help)
     raw_choices = ' '.join(args)
     choices = list(
         set([c for c in map(lambda c: c.strip(), raw_choices.split('|')) if c]))
@@ -29,7 +30,8 @@ async def handler(args, request):
         await request.reply('you always have other options, think better')
     else:
         weights = list(
-            map(lambda c: int(sha1(c.encode('utf8')).hexdigest(), base=16), choices))
+            map(lambda c: int(sha1(c.encode('utf8')).hexdigest(), base=16),
+                map(lambda c: f'{datetime.now().timetuple().tm_yday}{request.event.sender}{c}', choices)))
         total_weight = sum(weights)
         distribution = list(
             map(lambda w: w * 100 / total_weight, weights))
