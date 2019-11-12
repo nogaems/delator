@@ -10,6 +10,7 @@ Some folks on matrix are quite paranoid about their encrypted rooms logs might b
 * `%h` (help)
 * `%echo`
 * `%s` (search with DuckDuckGo)
+* `todo` (random distribution of choices)
 * `%olm`
 
 ### Coming soon™:
