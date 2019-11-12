@@ -11,11 +11,11 @@ def compose_response(choices, distr):
     tmp = {d: c for d, c in zip(distr, choices)}
     s_distr = sorted(distr, reverse=True)
     s_choices = [tmp[d] for d in s_distr]
-    choice_dist = '\n'.join(['{} {} {:.2f}%'.format(c,
-                                                    '─' *
-                                                    (max_choice_len - len(c) +
-                                                     (0 if (d + 1) // 10 else 1) + 1),
-                                                    d)
+    choice_dist = '\n'.join(['<code>{} {} {:.2f}%</code>'.format(c,
+                                                                 '─' *
+                                                                 (max_choice_len - len(c) +
+                                                                  (0 if (d + 1) // 10 else 1) + 1),
+                                                                 d)
                              for c, d in zip(s_choices, s_distr)])
     return f'you should do:\n{choice_dist}'
 
@@ -36,4 +36,4 @@ async def handler(args, request):
         distribution = list(
             map(lambda w: w * 100 / total_weight, weights))
         response = compose_response(choices, distribution)
-        await request.reply(response)
+        await request.reply(response, formatted=True)
