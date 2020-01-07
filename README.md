@@ -71,11 +71,10 @@ That's basically it.
 ## With Docker
 
 ```
-mkdir ~/.delator
-chmod -R a+w ~/.delator
+docker build -t delator --build-arg NO_CACHE="`date`" --build-arg TARGET_UID=$(id -u) --build_arg TARGET_USER=$(id -u -n) .
 
-docker build -t delator --build-arg NO_CACHE="`date`" .
-docker run -v ~/.delator/:/home/user/delator/profile -it delator
+mkdir ~/.delator
+docker run -v ~/.delator/:/home/$(id -u -n)/delator/profile -it delator
 ```
 
 # Add a command

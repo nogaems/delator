@@ -10,10 +10,11 @@ RUN python setup.py install
 RUN ldconfig
 
 # adding a user to run the bot from
-ENV USER="user"
-ENV HOME="/home/${USER}"
-RUN useradd -ms /bin/bash $USER
-USER $USER
+ARG TARGET_USER="user"
+ARG TARGET_UID="1000"
+ARG HOME="/home/${TARGET_USER}"
+RUN useradd -u $TARGET_UID -ms /bin/bash $TARGET_USER
+USER $TARGET_USER
 WORKDIR $HOME
 
 # clonning the bot repo and installing all the requirements
@@ -27,5 +28,9 @@ RUN pip install --user -r requirements.txt
 
 # copy configuration file you've preliminarily prepared
 ADD config.py ./
+USER root
+RUN chown $TARGET_UID:$TARGET_UID ./config.py
+RUN chmod 600 ./config.py
+USER $TARGET_USER
 
 CMD python main.py -l INFO
