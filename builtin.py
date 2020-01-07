@@ -4,6 +4,7 @@ import magic
 import re
 import gzip
 
+import config as cfg
 
 class MessageLinksInfo:
     chunk_size = 100000
@@ -44,7 +45,7 @@ class MessageLinksInfo:
         chunks = []
         for url in urls:
             try:
-                async with session.get(url) as response:
+                async with session.get(url, proxy=cfg.proxy if hasattr(cfg, 'proxy') else None) as response:
                     chunk = await response.content.readany()
                     while hasattr(response.connection, 'closed') and\
                             not response.connection.closed and \

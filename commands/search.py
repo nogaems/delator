@@ -1,6 +1,8 @@
 from lxml import html
 from urllib.parse import unquote
 
+import config as cfg
+
 
 name = 'search'
 aliases = ('s', 'ы')  # Russian users are gonna appreciate that
@@ -10,7 +12,7 @@ help = 'Search for a query using DuckDuckGo search engine. '\
 
 
 async def fetch_html(url, session):
-    async with session.get(url) as response:
+    async with session.get(url, proxy=cfg.proxy if hasattr(cfg, 'proxy') else None) as response:
         return await response.text()
 
 
