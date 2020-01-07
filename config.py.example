@@ -6,3 +6,4 @@ pickle_key = 'password-for-pickle-storage'
 store_name = 'bot'
 store_path = 'profile/'
 manager_accounts = ('') # name here accounts responsible for device keys verifiacation
+proxy = 'http://your.proxy:8080'
