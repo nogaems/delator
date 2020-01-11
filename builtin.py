@@ -1,5 +1,6 @@
 import asyncio
 import magic
+import chardet
 
 import re
 import gzip
@@ -28,12 +29,17 @@ class MessageLinksInfo:
 
     def _parse_title(self, html):
         decoded = ''
-        for codec in self.codecs:
-            try:
-                decoded = html.decode(codec)
-                break
-            except Exception as e:
-                decoded = e
+        detected = chardet.detect(html)
+        try:
+            decoded = html.decode(detected['encoding'])
+        except:
+            # fallback method
+            for codec in self.codecs:
+                try:
+                    decoded = html.decode(codec)
+                    break
+                except Exception as e:
+                    decoded = e
 
         if not isinstance(decoded, str):
             return decoded
