@@ -35,8 +35,11 @@ class Bot:
         if not os.path.exists(cfg.store_path):
             os.makedirs(cfg.store_path)
 
+        timeout = aiohttp.ClientTimeout(total=30)
         self.http_session = aiohttp.ClientSession(
-            headers={'User-Agent': self.user_agent})
+            headers={'User-Agent': self.user_agent},
+            timeout=timeout
+        )
 
         self.client = AsyncClient(
             cfg.server,
