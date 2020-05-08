@@ -32,7 +32,6 @@ if len(sys.argv) > 1 and '/' in sys.argv[1]:
     id = parts.pop()
     base_url = f'{scheme}{"/".join(parts)}/'
 else:
-    id = sys.argv[1] if len(sys.argv) > 1 else input('Enter poll id: ')
     base_url = os.environ.get('DELATOR_BASE_URL')
     if not base_url:
         print('''In order to get this script working, do
@@ -43,6 +42,7 @@ Ask someone responsible for bot deployment for details.''', file=sys.stderr)
         sys.exit(1)
     base_url = base_url + \
         'poll/' if base_url.endswith('/') else base_url + '/poll/'
+    id = sys.argv[1] if len(sys.argv) > 1 else input('Enter poll id: ')
 
 if len(sys.argv) > 2:
     answer = ' '.join(sys.argv[2:])
