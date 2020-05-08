@@ -150,8 +150,9 @@ async def handler(args, request):
             all_answers = list(poll['answers'].values())
             present_answers = set(all_answers)
             for answer in present_answers:
-                dist[answer] = '{:.2f}%'.format(
-                    all_answers.count(answer) * 100 / total_votes)
+                answer_count = all_answers.count(answer)
+                dist[answer] = '{:.2f}% ({})'.format(
+                    answer_count * 100 / total_votes, answer_count)
             response += ' Here is the result:\n'
             response += '\n'.join([f'{p}: <strong>{a}</strong>\n' for p, a
                                    in poll['answers'].items()])
