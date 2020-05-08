@@ -3,24 +3,25 @@ import math
 import time
 import shlex
 import json
+import os
 import asyncio
 from aiohttp import web
 
 name = 'poll'
 aliases = ('зщдд')
-help = ''' Start, participate and get results of a poll.
+help = '''Start, participate and get results of a poll.
 %poll start <option1,>
 Starts a new poll.
 Use space as the separator of options, quote options containing spaces with " or '.
 If there is only one <option> specified, 'not <option>' option will be automatically added.
-%poll stop <id>
-Stops the poll with id <id>. Prints the result. Only creator of a poll can stop it.
+%poll end <id>
+Ends the poll with id <id>. Prints the result. Only creator of a poll can end it.
 %poll <id> <code>
 Vote in a poll. Multiple choice is not allowed.
 You can vote only once during a poll and can not change your answer.
-In order to obtain a vote code you have to send a GET request to a certain endpoint.
-Ask a room moderator for details.
-'''
+In order to obtain a vote code you have to send a GET request to the url pointed out in the output of %poll start <option1,>,
+adding your choice to the end of the url separated with '/', e.g url/my%20choice.
+Ask a room moderator for details.'''
 
 # Configuration section.
 # There's no actual need to split it up into two files I suppose,
@@ -32,6 +33,15 @@ code_length = 4
 poll_timeout = 3600  # in seconds
 max_polls_num = 1024
 max_codes_num = 1024  # per poll, i.e. means amount of possible participants
+
+
+# this url is only used to display voting endpoint
+poll_url = os.environ.get('DELATOR_BASE_URL')
+if poll_url:
+    poll_url = poll_url if poll_url.endswith('/') else poll_url + '/'
+    poll_url += 'poll/'
+else:
+    poll_url = f'http://{host}:{port}{uri}'
 
 
 async def get_options(request):
@@ -121,16 +131,17 @@ async def handler(args, request):
             'codes': {},
             'answers': {}
         }
-        return await request.reply(f'Poll <strong>{id}</strong> has been started.', formatted=True)
-    if args[0] == 'stop':
+        return await request.reply(f'Poll <strong>{id}</strong> has been started. '
+                                   f'Vote url: {poll_url}{id}', formatted=True)
+    if args[0] == 'end':
         id = args[1]
         if id not in polls:
             return await request.reply(f'A poll with id <strong>{id}</strong> does not exist.',
                                        formatted=True)
         poll = polls[id]
         if poll['creator'] != sender:
-            return await request.reply(f'You have to be the creator of this poll in order to stop it.')
-        response = f'Poll <strong>{id}</strong> has been stopped.'
+            return await request.reply(f'You have to be the creator of this poll in order to end it.')
+        response = f'Poll <strong>{id}</strong> has been ended.'
         if not len(poll['answers']):
             response += ' No one voted though :('
         else:
@@ -158,4 +169,4 @@ async def handler(args, request):
     polls[id]['answers'][sender] = polls[id]['codes'][code]
     polls[id]['codes'].pop(code)
     return await request.reply('Voted successfully. '
-                               'Now wait until the creator of this poll stops it to find out the result.')
+                               'Now wait until the creator of this poll ends it to find out the result.')

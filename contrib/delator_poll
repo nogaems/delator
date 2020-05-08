@@ -8,11 +8,11 @@ import os
 import sys
 import json
 
-base_url = os.environ.get('DELATOR_POLL_BASE_URL')
+base_url = os.environ.get('DELATOR_BASE_URL')
 if not base_url:
     print('''
     In order to get this script working, do
-    export DELATOR_POLL_BASE_URL='http://<domain>:<port>/delator/poll',
+    export DELATOR_POLL_BASE_URL='http://<domain>:<port>/delator/',
     where domain and port are specific variableis for your delator bot setup.
     Ask someone responsible for bot deployment for details.
     ''', file=sys.stderr)
@@ -30,7 +30,7 @@ id = sys.argv[1] if len(sys.argv) > 1 else input('Enter poll id: ')
 if len(sys.argv) > 2:
     answer = ' '.join(sys.argv[2:])
 else:
-    poll_url = base_url + id
+    poll_url = base_url + f'poll/{id}'
     try:
         with urllib.request.urlopen(poll_url) as f:
             response = f.read().decode('utf8')
@@ -56,7 +56,7 @@ else:
         sys.exit(1)
 
 answer = urllib.parse.quote(answer)
-vote_url = base_url + f'{id}/{answer}'
+vote_url = base_url + f'poll/{id}/{answer}'
 try:
     with urllib.request.urlopen(vote_url) as f:
         response = f.read().decode('utf8')
