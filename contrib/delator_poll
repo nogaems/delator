@@ -8,29 +8,46 @@ import os
 import sys
 import json
 
-base_url = os.environ.get('DELATOR_BASE_URL')
-if not base_url:
-    print('''
-    In order to get this script working, do
-    export DELATOR_POLL_BASE_URL='http://<domain>:<port>/delator/',
-    where domain and port are specific variableis for your delator bot setup.
-    Ask someone responsible for bot deployment for details.
-    ''', file=sys.stderr)
-    sys.exit(1)
-
-base_url = base_url if base_url.endswith('/') else base_url + '/'
-
 if len(sys.argv) == 2 and sys.argv[1] in ['-h', '--help']:
     print('usage: delator_poll [id] [code]\n'
           'If no arguments specified, enters interactive mode, '
-          'otherwise uses passed values and tries to vote')
+          'otherwise uses passed values and tries to vote.\n'
+          'Instead of passing an id of a poll, you can pass its link '
+          'and it will be used directly, ignoring DELATOR_BASE_URL variable.')
     sys.exit(0)
 
-id = sys.argv[1] if len(sys.argv) > 1 else input('Enter poll id: ')
+if len(sys.argv) > 1 and '/' in sys.argv[1]:
+    # here we suppose that it's not an id but a url has been passed
+    scheme = sys.argv[1].split('://').pop(0)
+    if scheme != sys.argv[1]:  # scheme presents
+        scheme = scheme + '://'
+        url = sys.argv[1].split(scheme).pop()
+    else:
+        # there's actually no way to figure it out if SSL is used here
+        print('Bad URL: specify URL scheme.')
+        sys.exit(1)
+    parts = url.split('/')
+    if parts[-1] == '':
+        parts.pop()
+    id = parts.pop()
+    base_url = f'{scheme}{"/".join(parts)}/'
+else:
+    id = sys.argv[1] if len(sys.argv) > 1 else input('Enter poll id: ')
+    base_url = os.environ.get('DELATOR_BASE_URL')
+    if not base_url:
+        print('''In order to get this script working, do
+$ export DELATOR_BASE_URL='http://<domain>:<port>/delator/',
+where domain and port are specific variableis for your delator bot setup.
+Or pass a link to the poll directly instead of an id.
+Ask someone responsible for bot deployment for details.''', file=sys.stderr)
+        sys.exit(1)
+    base_url = base_url + \
+        'poll/' if base_url.endswith('/') else base_url + '/poll/'
+
 if len(sys.argv) > 2:
     answer = ' '.join(sys.argv[2:])
 else:
-    poll_url = base_url + f'poll/{id}'
+    poll_url = base_url + id
     try:
         with urllib.request.urlopen(poll_url) as f:
             response = f.read().decode('utf8')
@@ -56,7 +73,7 @@ else:
         sys.exit(1)
 
 answer = urllib.parse.quote(answer)
-vote_url = base_url + f'poll/{id}/{answer}'
+vote_url = base_url + f'{id}/{answer}'
 try:
     with urllib.request.urlopen(vote_url) as f:
         response = f.read().decode('utf8')
