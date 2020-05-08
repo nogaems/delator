@@ -1,0 +1,71 @@
+#! /usr/bin/env python3
+# coding: utf8
+# vim: set syntax=python:
+
+import urllib.request
+import urllib.parse
+import os
+import sys
+import json
+
+base_url = os.environ.get('DELATOR_POLL_BASE_URL')
+if not base_url:
+    print('''
+    In order to get this script working, do
+    export DELATOR_POLL_BASE_URL='http://<domain>:<port>/delator/poll',
+    where domain and port are specific variableis for your delator bot setup.
+    Ask someone responsible for bot deployment for details.
+    ''', file=sys.stderr)
+    sys.exit(1)
+
+base_url = base_url if base_url.endswith('/') else base_url + '/'
+
+if len(sys.argv) == 2 and sys.argv[1] in ['-h', '--help']:
+    print('usage: delator_poll [id] [code]\n'
+          'If no arguments specified, enters interactive mode, '
+          'otherwise uses passed values and tries to vote')
+    sys.exit(0)
+
+id = sys.argv[1] if len(sys.argv) > 1 else input('Enter poll id: ')
+if len(sys.argv) > 2:
+    answer = ' '.join(sys.argv[2:])
+else:
+    poll_url = base_url + id
+    try:
+        with urllib.request.urlopen(poll_url) as f:
+            response = f.read().decode('utf8')
+            options = json.loads(response)['options']
+            print('Awailable options: ')
+            for i, option in enumerate(options):
+                print(f'{i+1}): {option}')
+            while True:
+                number = int(input('Pick one: ')) - 1
+                if number < 0 or number >= len(options):
+                    print('Error: select a valid number', file=sys.stderr)
+                else:
+                    answer = options[number]
+                    break
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            print(e.file.read().decode('utf8'))
+        else:
+            print(e, file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
+
+answer = urllib.parse.quote(answer)
+vote_url = base_url + f'{id}/{answer}'
+try:
+    with urllib.request.urlopen(vote_url) as f:
+        response = f.read().decode('utf8')
+        print(response)
+        sys.exit(0)
+except urllib.error.HTTPError as e:
+    print(e.file.read().decode('utf8'))
+
+    sys.exit(1)
+except Exception as e:
+    print(e, file=sys.stderr)
+    sys.exit(1)
