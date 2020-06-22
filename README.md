@@ -63,7 +63,7 @@ virtualenv --system-site-packages venv
 source venv/bin/activate
 pip install --user -r requirements.txt
 ```
-In order to get %poll` properly working, set this environment variable:
+In order to get `%poll` properly working, set this environment variable:
 ```
 DELATOR_BASE_URL='https://domain.name/url/where/you/want/the/bot/to/be/placed/at/'
 ```
