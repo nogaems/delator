@@ -10,8 +10,9 @@ Some folks on matrix are quite paranoid about their encrypted rooms logs might b
 * `%h` (help)
 * `%echo`
 * `%s` (search with DuckDuckGo)
-* `todo` (random distribution of choices)
-* `%olm`
+* `%todo` (random distribution of choices)
+* `%poll` (vote secretly)
+* `%olm` (manage bot's encryption settings)
 
 ### Coming soon™:
 * `%d` (dice)
@@ -61,6 +62,10 @@ Install all requirements in a virtual environment:
 virtualenv --system-site-packages venv
 source venv/bin/activate
 pip install --user -r requirements.txt
+```
+In order to get %poll` properly working, set this environment variable:
+```
+DELATOR_BASE_URL='https://domain.name/url/where/you/want/the/bot/to/be/placed/at/'
 ```
 After this getting done, you're ready to run your bot:
 ```
