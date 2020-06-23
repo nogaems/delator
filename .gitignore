@@ -105,3 +105,6 @@ venv.bak/
 
 # profile files
 profile/*
+
+# config
+config.py
