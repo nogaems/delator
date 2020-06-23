@@ -7,3 +7,4 @@ store_name = 'bot'
 store_path = 'profile/'
 manager_accounts = ('') # name here accounts responsible for device keys verifiacation
 proxy = 'http://your.proxy:8080'
+user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) QtWebEngine/5.14.1 Chrome/77.0.3865.129 Safari/537.36'

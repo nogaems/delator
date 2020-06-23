@@ -23,8 +23,6 @@ class Bot:
     cfg = cfg
 
     sync_delay = 1000
-    user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:60.9) '
-    'Gecko/20100101 Goanna/4.4 Firefox/60.9 PaleMoon/28.7.2'
 
     def __init__(self, loglevel=None):
         config = ClientConfig(encryption_enabled=True,
@@ -37,7 +35,7 @@ class Bot:
 
         timeout = aiohttp.ClientTimeout(total=30)
         self.http_session = aiohttp.ClientSession(
-            headers={'User-Agent': self.user_agent},
+            headers={'User-Agent': cfg.user_agent},
             timeout=timeout
         )
 
