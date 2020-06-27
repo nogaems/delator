@@ -14,7 +14,7 @@ class CustomLogger:
         pass
 
     def warning(self, msg):
-        pass
+        raise Exception
 
     def error(self, msg):
         pass
@@ -87,7 +87,7 @@ class MessageLinksInfo:
         try:
             extracted = self.ytdl.extract_info(url)
             return extracted['title']
-        except Exception as error:
+        except Exception:
             return None
 
     async def _get_info(self, message):
