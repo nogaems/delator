@@ -13,9 +13,9 @@ Some folks on matrix are quite paranoid about their encrypted rooms logs might b
 * `%todo` (random distribution of choices)
 * `%poll` (vote secretly)
 * `%olm` (manage bot's encryption settings)
+* `%d` (dice)
 
 ### Coming soon™:
-* `%d` (dice)
 * `%r` (remind)
 
 ## Features

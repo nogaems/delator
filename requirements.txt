@@ -3,3 +3,4 @@ aiohttp[speedups]<=3.6.2
 python-magic
 lxml
 youtube_dl
+dice
