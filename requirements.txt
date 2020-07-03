@@ -4,3 +4,4 @@ python-magic
 lxml
 youtube_dl
 dice
+feedparser

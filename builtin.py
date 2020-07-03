@@ -2,9 +2,16 @@ import asyncio
 import magic
 import chardet
 import youtube_dl
+import feedparser
+
+import logbook
+from log import logger_group
 
 import re
 import gzip
+import json
+import os
+import time
 
 import config as cfg
 
@@ -117,3 +124,106 @@ class MessageLinksInfo:
     def get_info(self, message):
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(self._get_info(message))
+
+
+class Feed:
+    def __init__(self, url):
+        self.url = url
+        feed = feedparser.parse(url)
+        if feed.bozo:
+            self.error = f'{feed.bozo_exception}'
+        else:
+            self.error = None
+            self.feed = feed
+            self.last_update = time.localtime()
+
+    def get_update(self):
+        update = []
+        feed = feedparser.parse(self.url)
+        for entry in feed.entries:
+            if hasattr(entry, 'published_parsed'):
+                to_compare_with = entry.published_parsed
+            elif hasattr(entry, 'updated_parsed'):
+                to_compare_with = entry.updated_parsed
+            else:
+                to_compare_with = time.gmtime(0)
+
+            if to_compare_with > self.last_update:
+                update.append({
+                    'title': entry.title,
+                    'url': entry.link
+                })
+                self.last_update = to_compare_with
+        return update
+
+
+class Feeder:
+    def __init__(self):
+        self.logger = logbook.Logger('feeder')
+        logger_group.add_logger(self.logger)
+
+        self.urls_file = os.path.join(cfg.store_path, 'feeds.json')
+        urls_dump = self._load_urls()
+        urls_dump = list(set(urls_dump)) if urls_dump is not None else []
+        self.feeds = {}
+
+        if not urls_dump:
+            self._dump_urls()
+        else:
+            for url in urls_dump:
+                error = self.add_feed(url)
+                if error:
+                    self.logger.error(
+                        f'Unable to add a feed with url "{url}": {error}')
+                else:
+                    feed = self.feeds[url].feed
+                    self.logger.info(
+                        f'loaded up feed {feed.href} with title "{feed.feed.title}"')
+
+    def _load_urls(self):
+        if os.path.exists(self.urls_file):
+            try:
+                urls = json.load(open(self.urls_file))
+                if not isinstance(urls, list):
+                    self.logger.error(f'{self.urls_file}: wrong format')
+                    return None
+                if len(urls):
+                    for url in urls:
+                        if not isinstance(url, str):
+                            self.logger.error(
+                                f'{self.urls_file}: url must be str, not {type(url)}')
+                            return None
+                return urls
+            except Exception as error:
+                self.logger.error(f'{self.urls_file}: {error}')
+                return None
+        else:
+            self.logger.warning(f'{self.urls_file}: file does not exist,'
+                                ' assuming there are no feeds added to the bot')
+            return None
+
+    def _dump_urls(self):
+        json.dump(list(self.feeds.keys()), open(self.urls_file, 'w'))
+
+    def add_feed(self, url):
+        if url in self.feeds:
+            return 'This feed is already on the list.'
+        feed = Feed(url)
+        if feed.error:
+            return feed.error
+        else:
+            self.feeds[url] = feed
+            self._dump_urls()
+
+    def del_feed(self, url):
+        if url in self.feeds:
+            self.feeds.pop(url)
+            self._dump_urls()
+        else:
+            return 'This feed is not on the list.'
+
+    def get_updates(self):
+        updates = []
+        for feed in self.feeds.values():
+            updates += feed.get_update()
+        return updates
