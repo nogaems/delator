@@ -10,11 +10,12 @@ import glob
 import importlib.util
 import re
 import os
+import time
 
 from log import logger_group
 import config as cfg
 from command import Command
-from builtin import MessageLinksInfo
+from builtin import MessageLinksInfo, Feeder
 
 
 class Bot:
@@ -55,6 +56,7 @@ class Bot:
         logger_group.add_logger(self.logger)
 
         self.mli = MessageLinksInfo(self.http_session)
+        self.feeder = Feeder()
 
         self._register_commands()
         self.client.add_response_callback(self._sync_cb, SyncResponse)
@@ -142,11 +144,38 @@ class Bot:
         else:
             return (None, None)
 
+    async def _serve_feeder(self):
+        while True:
+            updates = self.feeder.get_updates()
+            if len(updates):
+                update_start = time.time()
+                lines = [
+                    f'{u["url"]}\n<strong>{u["title"]}</strong>' for u in updates]
+                content = {
+                    'body': '\n'.join(lines),
+                    'msgtype': 'm.text',
+                    'format': 'org.matrix.custom.html'
+                }
+                content.update({
+                    'formatted_body': content['body']
+                })
+
+                for room_id in self.client.rooms:
+                    await self.client.room_send(room_id, 'm.room.message', content)
+                time_to_sleep = cfg.feeder_period - \
+                    (time.time() - update_start)
+                if time_to_sleep > 0:
+                    await asyncio.sleep(time_to_sleep)
+            else:
+                await asyncio.sleep(cfg.feeder_period)
+
     async def _serve_forever(self):
         response = await self.client.login(cfg.password)
         self.logger.info(response)
-
-        await self.client.sync_forever(1000, full_state=True)
+        feeder_task = asyncio.create_task(self._serve_feeder())
+        sync_task = asyncio.create_task(
+            self.client.sync_forever(1000, full_state=True))
+        await asyncio.gather(feeder_task, sync_task)
 
     async def _key_query_cb(self, response):
         for device in self.client.device_store:
