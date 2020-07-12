@@ -9,8 +9,12 @@ async def handler(args, request):
         if not len(request.bot.feeder.feeds):
             await request.reply('The list is empty!')
         else:
-            urls = '\n'.join(list(request.bot.feeder.feeds.keys()))
-            await request.reply(f'feeds list:\n{urls}')
+            items = [f'{feed.title} ({feed.link})'
+                     for feed in [feed.feed.feed
+                                  for feed in request.bot.feeder.feeds.values()]]
+            items = '\n'.join(
+                [f'<strong>{n}<strong>: {items[n]}' for n in range(len(items))])
+            await request.reply(f'feeds list:\n{items}', formatted=True)
     elif request.event.sender in request.bot.cfg.manager_accounts and len(args) == 2:
         if args[0] == 'add':
             error = request.bot.feeder.add_feed(args[1])
