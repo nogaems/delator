@@ -6,8 +6,11 @@ RSS and Atom are both supported. Addition/deletion is only available for manager
 
 async def handler(args, request):
     if not len(args) or (len(args) == 1 and args[0] == 'list'):
-        urls = '\n'.join(list(request.bot.feeder.feeds.keys()))
-        await request.reply(f'feeds list:\n{urls}')
+        if not len(request.bot.feeder.feeds):
+            await request.reply('The list is empty!')
+        else:
+            urls = '\n'.join(list(request.bot.feeder.feeds.keys()))
+            await request.reply(f'feeds list:\n{urls}')
     elif request.event.sender in request.bot.cfg.manager_accounts and len(args) == 2:
         if args[0] == 'add':
             error = request.bot.feeder.add_feed(args[1])
