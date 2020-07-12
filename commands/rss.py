@@ -21,7 +21,19 @@ async def handler(args, request):
             response = error if error else 'Added!'
             await request.reply(response)
         elif args[0] == 'del':
-            error = request.bot.feeder.del_feed(args[1])
+            try:
+                rss_num = int(args[1])
+                rss_link = list(request.bot.feeder.feeds.keys())[rss_num]
+            except ValueError:
+                rss_link = args[1]
+            except IndexError:
+                total_num = len(request.bot.feeder.feeds)
+                response = f'There {"is" if total_num == 1 else "are"} only {total_num}' \
+                    f' element{"s" if total_num > 1 else ""} on the list!' if total_num else \
+                    'The list is empty!'
+                await request.reply(response)
+                return
+            error = request.bot.feeder.del_feed(rss_link)
             response = error if error else 'Deleted!'
             await request.reply(response)
         else:
