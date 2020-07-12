@@ -33,6 +33,10 @@ Some folks on matrix are quite paranoid about their encrypted rooms logs might b
 
 # Deploy
 
+## Requirements
+
+ - python 3.7+
+
 ## Preparation
 
 ```
