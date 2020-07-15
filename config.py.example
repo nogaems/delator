@@ -9,3 +9,4 @@ manager_accounts = ('') # name here accounts responsible for device keys verifia
 proxy = 'http://your.proxy:8080'
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) QtWebEngine/5.14.1 Chrome/77.0.3865.129 Safari/537.36'
 feeder_period = 1800 # interval in seconds between updates
+ytdl_source_address = '0.0.0.0' # Which source ip to bind to for outgoing ytdl requests

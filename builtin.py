@@ -36,6 +36,7 @@ class MessageLinksInfo:
         self.magic = magic.Magic(mime=True, uncompress=True)
         self.ytdl = youtube_dl.YoutubeDL({
             'skip_download': True,
+            'source_address': cfg.ytdl_source_address if hasattr(cfg, 'ytdl_source_address') else None,
             'logger': CustomLogger()
         })
 
