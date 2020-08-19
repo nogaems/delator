@@ -49,7 +49,7 @@ class MessageLinksInfo:
         try:
             return gzip.decompress(data)
 
-        except OSError:
+        except (OSError, EOFError):
             return None
 
     def _parse_title(self, html):
@@ -226,5 +226,10 @@ class Feeder:
     def get_updates(self):
         updates = []
         for feed in self.feeds.values():
-            updates += feed.get_update()
+            # Apparetnly we can get an exception raised out of the
+            # feedparser.parse() function, so let's check
+            try:
+                updates += feed.get_update()
+            except Exception as error:
+                self.logger.error('Failed to get an update for feed url {feed.url}: {error}')
         return updates
