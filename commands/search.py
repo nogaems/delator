@@ -1,5 +1,6 @@
 from lxml import html
 from urllib.parse import unquote
+import re
 
 import config as cfg
 
@@ -37,6 +38,10 @@ def compose_response(result):
         f'{prefix}\n<strong>Title: {result["title"]}<strong>\n{result["snippet"]}\n{result["link"]}'
 
 
+def cut_off_extra_spacing(s):
+    return re.sub('\n\s*\n', '', s)
+
+
 async def handler(args, request):
     if args:
         try:
@@ -59,6 +64,10 @@ async def handler(args, request):
         }
 
         for link, title, snippet in zip(*parse_html(document)):
+            if 'ad_provider' in link or 'Ad\n' in title:
+                continue
+            title = cut_off_extra_spacing(title)
+            snippet = cut_off_extra_spacing(snippet)
             sr[request.room_id][request.event.sender]['results'].append({
                 'link': link,
                 'title': title,
