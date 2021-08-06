@@ -56,7 +56,7 @@ class MessageLinksInfo:
         decoded = ''
         detected = chardet.detect(html)
         try:
-            decoded = html.decode(detected['encoding'])
+            decoded = html.decode(detected['encoding'], errors='ignore')
         except:
             # fallback method
             for codec in self.codecs:
