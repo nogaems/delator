@@ -53,15 +53,15 @@ class MessageLinksInfo:
             return None
 
     def _parse_title(self, html):
-        decoded = ''
+        threshold = 0.5
         detected = chardet.detect(html)
-        try:
+        if detected and detected['confidence'] >= threshold:
             decoded = html.decode(detected['encoding'], errors='ignore')
-        except:
+        else:
             # fallback method
             for codec in self.codecs:
                 try:
-                    decoded = html.decode(codec)
+                    decoded = html.decode(codec, errors='ignore')
                     break
                 except Exception as e:
                     decoded = e
