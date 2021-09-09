@@ -131,17 +131,14 @@ class Feed:
     def __init__(self, url):
         self.url = url
         feed = feedparser.parse(url)
-        if feed.bozo:
-            self.error = f'{feed.bozo_exception}'
-        else:
-            self.error = None
-            self.feed = feed
-            self.last_update = time.localtime()
+        feed.error = f'{feed.bozo_exception}' if feed.bozo else None
+        self.feed = feed
+        self.last_update = time.localtime()
 
     def get_update(self):
         update = []
         feed = feedparser.parse(self.url)
-        for entry in feed.entries:
+        for entry in feed.entries if hasattr(feed, "entries") else []:
             if hasattr(entry, 'published_parsed'):
                 to_compare_with = entry.published_parsed
             elif hasattr(entry, 'updated_parsed'):
@@ -178,8 +175,10 @@ class Feeder:
                         f'Unable to add a feed with url "{url}": {error}')
                 else:
                     feed = self.feeds[url].feed
-                    self.logger.info(
-                        f'loaded up feed {feed.href} with title "{feed.feed.title}"')
+                    message = f'loaded up feed {feed.href}'
+                    message += f' with title "{feed.feed.title}"' if hasattr(feed.feed, 'title') else \
+                               f' ({feed.error})'
+                    self.logger.info(message)
 
     def _load_urls(self):
         if os.path.exists(self.urls_file):
@@ -210,11 +209,8 @@ class Feeder:
         if url in self.feeds:
             return 'This feed is already on the list.'
         feed = Feed(url)
-        if feed.error:
-            return feed.error
-        else:
-            self.feeds[url] = feed
-            self._dump_urls()
+        self.feeds[url] = feed
+        self._dump_urls()
 
     def del_feed(self, url):
         if url in self.feeds:
@@ -231,5 +227,5 @@ class Feeder:
             try:
                 updates += feed.get_update()
             except Exception as error:
-                self.logger.error('Failed to get an update for feed url {feed.url}: {error}')
+                self.logger.error(f'Failed to get an update for feed url {feed.url}: {error}')
         return updates

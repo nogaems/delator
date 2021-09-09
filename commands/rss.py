@@ -9,8 +9,9 @@ async def handler(args, request):
         if not len(request.bot.feeder.feeds):
             await request.reply('The list is empty!')
         else:
-            items = [f'{feed.title} ({feed.link})'
-                     for feed in [feed.feed.feed
+            items = [f'{feed.feed.title} ({feed.feed.link})' if not feed.error else
+                     f'{feed.href} (error: {feed.error})'
+                     for feed in [feed.feed
                                   for feed in request.bot.feeder.feeds.values()]]
             items = '\n'.join(
                 [f'<strong>{n}<strong>: {items[n]}' for n in range(len(items))])
